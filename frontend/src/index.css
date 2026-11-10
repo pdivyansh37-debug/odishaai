@@ -1,0 +1,202 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    font-size: 16px;
+  }
+
+  body {
+    font-family: 'Noto Sans Odia', 'Inter', system-ui, sans-serif;
+    @apply bg-gray-50 text-gray-900 antialiased;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-semibold leading-tight;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-gray-100;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-primary rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-primary-dark;
+  }
+
+  /* Firefox scrollbar */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #4CAF50 #f3f4f6;
+  }
+}
+
+@layer components {
+  .container-app {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 font-semibold rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95;
+  }
+
+  .btn-primary {
+    @apply btn bg-primary hover:bg-primary-dark text-white focus:ring-primary;
+  }
+
+  .btn-secondary {
+    @apply btn bg-white border-2 border-primary text-primary hover:bg-primary hover:text-white focus:ring-primary;
+  }
+
+  .btn-danger {
+    @apply btn bg-danger hover:bg-red-700 text-white focus:ring-danger;
+  }
+
+  .btn-ghost {
+    @apply btn bg-transparent hover:bg-gray-100 text-gray-700 focus:ring-gray-300;
+  }
+
+  .btn-sm {
+    @apply px-3 py-1.5 text-sm;
+  }
+
+  .btn-md {
+    @apply px-5 py-2.5 text-base;
+  }
+
+  .btn-lg {
+    @apply px-8 py-4 text-lg;
+  }
+
+  .card {
+    @apply bg-white rounded-2xl shadow-sm border border-gray-100 p-6;
+  }
+
+  .input {
+    @apply w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-primary focus:outline-none transition-colors text-base;
+  }
+
+  .label {
+    @apply block text-sm font-semibold text-gray-700 mb-2;
+  }
+
+  .badge-pending {
+    @apply inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800;
+  }
+
+  .badge-resolved {
+    @apply inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800;
+  }
+
+  .badge-overdue {
+    @apply inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800;
+  }
+
+  .badge-escalated {
+    @apply inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-orange-100 text-orange-800;
+  }
+
+  .badge-in_progress {
+    @apply inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800;
+  }
+}
+
+@layer utilities {
+  .text-odia {
+    font-family: 'Noto Sans Odia', sans-serif;
+  }
+
+  .gradient-primary {
+    background: linear-gradient(135deg, #4CAF50 0%, #388E3C 100%);
+  }
+
+  .gradient-hero {
+    background: linear-gradient(135deg, #1a5e1f 0%, #2e7d32 40%, #4CAF50 100%);
+  }
+
+  .glass {
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+
+  .text-shadow {
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  }
+}
+
+/* Chat animations */
+@keyframes typing-dot {
+  0%, 20% { transform: translateY(0); opacity: 0.6; }
+  50% { transform: translateY(-6px); opacity: 1; }
+  80%, 100% { transform: translateY(0); opacity: 0.6; }
+}
+
+.typing-dot:nth-child(1) { animation: typing-dot 1.4s infinite 0s; }
+.typing-dot:nth-child(2) { animation: typing-dot 1.4s infinite 0.2s; }
+.typing-dot:nth-child(3) { animation: typing-dot 1.4s infinite 0.4s; }
+
+/* Recording animation */
+@keyframes recording-pulse {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.3); opacity: 0.5; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.recording-pulse {
+  animation: recording-pulse 1s ease-in-out infinite;
+}
+
+/* Wave animation */
+@keyframes wave {
+  0% { height: 4px; }
+  50% { height: 20px; }
+  100% { height: 4px; }
+}
+
+.wave-bar {
+  animation: wave 0.8s ease-in-out infinite;
+  background: #f44336;
+  border-radius: 2px;
+  width: 4px;
+}
+
+.wave-bar:nth-child(1) { animation-delay: 0s; }
+.wave-bar:nth-child(2) { animation-delay: 0.1s; }
+.wave-bar:nth-child(3) { animation-delay: 0.2s; }
+.wave-bar:nth-child(4) { animation-delay: 0.3s; }
+.wave-bar:nth-child(5) { animation-delay: 0.4s; }
+
+/* Map container */
+.leaflet-container {
+  border-radius: 1rem;
+  z-index: 0;
+}
+
+/* Print styles for reports */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  body {
+    background: white;
+  }
+}
