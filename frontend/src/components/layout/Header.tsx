@@ -1,11 +1,13 @@
 import React, { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { Menu, X, MessageSquare, FileText, CheckCircle2, Search, ShieldAlert } from 'lucide-react'
+import { Menu, X, MessageSquare, FileText, Search, ShieldAlert } from 'lucide-react'
 import LanguageSelector from '../ui/LanguageSelector'
+import { useChatStore } from '../../stores/chatStore'
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const location = useLocation()
+  const { language, setLanguage } = useChatStore()
 
   const navLinks = [
     { to: '/', label: 'Home / ମୂଳପୃଷ୍ଠା', icon: null },
@@ -59,7 +61,7 @@ export default function Header() {
 
           {/* Right controls */}
           <div className="hidden md:flex items-center space-x-3">
-            <LanguageSelector />
+            <LanguageSelector value={language} onChange={setLanguage} />
             <Link
               to="/admin/login"
               className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-emerald-800 text-emerald-100 border border-emerald-600/60 hover:bg-emerald-900 transition-colors"
@@ -70,7 +72,7 @@ export default function Header() {
 
           {/* Mobile hamburger */}
           <div className="flex items-center space-x-2 md:hidden">
-            <LanguageSelector />
+            <LanguageSelector value={language} onChange={setLanguage} />
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="p-2 rounded-lg text-white hover:bg-white/10 focus:outline-none"

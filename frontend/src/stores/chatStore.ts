@@ -3,10 +3,10 @@ import { ChatMessage, Language } from '../types'
 
 interface ChatState {
   messages: ChatMessage[]
-  sessionId: string | null
+  sessionId: string
   language: Language
   isLoading: boolean
-  addMessage: (message: ChatMessage) => void
+  addMessage: (message: Omit<ChatMessage, 'id'> & { id?: string }) => void
   clearChat: () => void
   setLanguage: (lang: Language) => void
   setSessionId: (id: string) => void
@@ -17,12 +17,20 @@ const generateId = () => Math.random().toString(36).substring(2, 11)
 
 export const useChatStore = create<ChatState>((set) => ({
   messages: [],
-  sessionId: null,
+  sessionId: generateId(),
   language: 'or',
   isLoading: false,
 
-  addMessage: (message: ChatMessage) =>
-    set((state) => ({ messages: [...state.messages, message] })),
+  addMessage: (message) =>
+    set((state) => ({
+      messages: [
+        ...state.messages,
+        {
+          ...message,
+          id: message.id || generateId(),
+        },
+      ],
+    })),
 
   clearChat: () =>
     set({ messages: [], sessionId: generateId() }),

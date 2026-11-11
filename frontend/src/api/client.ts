@@ -2,7 +2,7 @@ import axios, { AxiosError } from 'axios'
 import { useAuthStore } from '../stores/authStore'
 
 const apiClient = axios.create({
-  baseURL: '/api',
+  baseURL: import.meta.env.VITE_API_URL || '/api',
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
@@ -25,9 +25,12 @@ apiClient.interceptors.request.use(
 apiClient.interceptors.response.use(
   (response) => response,
   (error: AxiosError) => {
-    if (error.response?.status === 401) {
-      useAuthStore.getState().logout()
-      window.location.href = '/admin/login'
+    if (error.response?.status === 401 && window.location.pathname.startsWith('/admin')) {
+      const token = useAuthStore.getState().token
+      if (token && token !== 'demo-jwt-token') {
+        useAuthStore.getState().logout()
+        window.location.href = '/admin/login'
+      }
     }
 
     const message =

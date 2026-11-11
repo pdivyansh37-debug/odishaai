@@ -1,22 +1,45 @@
 import os
+import logging
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from app.config import settings
-from app.database import engine, Base
+from app.database import engine, Base, SessionLocal
 # Import all models so that Base.metadata.create_all creates all tables
 from app.models import citizen, scheme, grievance, eligibility_check, notification, officer
+from app.models.scheme import Scheme
 from app.routers import auth, schemes, grievances, chat, dashboard
+
+logger = logging.getLogger(__name__)
+
+_API_PREFIXES = ("/auth", "/schemes", "/grievances", "/chat", "/dashboard")
+
+
+def _auto_seed_if_empty():
+    """Ensure tables exist and seed initial Odisha schemes & admin user if DB is empty."""
+    try:
+        Base.metadata.create_all(bind=engine)
+        db = SessionLocal()
+        try:
+            is_empty = db.query(Scheme).count() == 0
+        finally:
+            db.close()
+        if is_empty:
+            from seed_data import seed
+            seed()
+    except Exception as e:
+        logger.warning(f"Auto-init DB skipped or failed: {e}")
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Create tables on startup
-    Base.metadata.create_all(bind=engine)
-    # Ensure upload folder exists
-    os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
+    _auto_seed_if_empty()
+    try:
+        os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
+    except Exception as e:
+        logger.warning(f"Could not create upload dir: {e}")
     yield
 
 
@@ -26,6 +49,26 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan,
 )
+
+
+class PrefixNormalizerMiddleware:
+    """Handle reverse proxies (such as Vercel Services mount at /api) that strip the /api prefix."""
+
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] == "http":
+            path = scope.get("path", "")
+            if any(path == p or path.startswith(p + "/") for p in _API_PREFIXES):
+                scope["path"] = "/api" + path
+        await self.app(scope, receive, send)
+
+
+# Ensure DB initialized even in serverless environments where lifespan may not fire before first check
+_auto_seed_if_empty()
+
+app.add_middleware(PrefixNormalizerMiddleware)
 
 # CORS
 app.add_middleware(
@@ -37,8 +80,11 @@ app.add_middleware(
 )
 
 # Static file serving for uploads
-os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
-app.mount("/uploads", StaticFiles(directory=settings.UPLOAD_DIR), name="uploads")
+try:
+    os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
+    app.mount("/uploads", StaticFiles(directory=settings.UPLOAD_DIR), name="uploads")
+except Exception as e:
+    logger.warning(f"Skipping static uploads mount: {e}")
 
 # Include Routers
 app.include_router(auth.router)
@@ -49,6 +95,7 @@ app.include_router(dashboard.router)
 
 
 @app.get("/health", tags=["health"])
+@app.get("/api/health", tags=["health"])
 def health_check():
     return {
         "status": "healthy",
@@ -65,4 +112,3 @@ def root():
         "documentation": "/docs",
         "health": "/health",
     }
-

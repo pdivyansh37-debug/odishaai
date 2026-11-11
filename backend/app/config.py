@@ -4,9 +4,12 @@ from typing import List
 import os
 
 
+IS_VERCEL = bool(os.environ.get("VERCEL") or os.environ.get("VERCEL_ENV"))
+
+
 class Settings(BaseSettings):
-    # Database
-    DATABASE_URL: str = "postgresql://postgres:password@localhost:5432/graamseva"
+    # Database (defaults to local SQLite for zero-config startup; override with PostgreSQL URL in production)
+    DATABASE_URL: str = "sqlite:///./graamseva.db"
 
     # Gemini AI
     GEMINI_API_KEY: str = ""
@@ -28,8 +31,21 @@ class Settings(BaseSettings):
     ENVIRONMENT: str = "development"
     CORS_ORIGINS: str = "http://localhost:3000,http://localhost:5173"
 
-    # Upload path
-    UPLOAD_DIR: str = os.path.join(os.path.dirname(os.path.dirname(__file__)), "uploads")
+    # Upload path (use /tmp/uploads in serverless read-only environments like Vercel)
+    UPLOAD_DIR: str = (
+        "/tmp/uploads"
+        if IS_VERCEL
+        else os.path.join(os.path.dirname(os.path.dirname(__file__)), "uploads")
+    )
+
+    @field_validator("DATABASE_URL", mode="before")
+    @classmethod
+    def resolve_database_url(cls, v: str) -> str:
+        if IS_VERCEL and (not v or "localhost" in v or v == "sqlite:///./graamseva.db"):
+            return "sqlite:////tmp/graamseva.db"
+        if v and v.startswith("postgres://"):
+            return v.replace("postgres://", "postgresql://", 1)
+        return v or "sqlite:///./graamseva.db"
 
     @property
     def cors_origins_list(self) -> List[str]:

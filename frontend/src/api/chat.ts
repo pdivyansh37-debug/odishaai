@@ -9,6 +9,14 @@ export interface ChatResponse {
   suggestions?: string[]
 }
 
+const LANG_MAP: Record<string, string> = {
+  or: 'odia',
+  hi: 'hindi',
+  en: 'english',
+}
+
+const normalizeLang = (lang: string) => LANG_MAP[lang] || lang
+
 export const sendChatMessage = async (
   message: string,
   language: string = 'odia',
@@ -16,7 +24,7 @@ export const sendChatMessage = async (
 ): Promise<ChatResponse> => {
   const response = await apiClient.post('/chat', {
     message,
-    language,
+    language: normalizeLang(language),
     session_id: sessionId,
   })
   return response.data
@@ -32,7 +40,7 @@ export const sendVoiceMessage = async (
   const formData = new FormData()
   formData.append('audio', audioBlob, 'recording.webm')
   formData.append('session_id', sessionId)
-  formData.append('language', language)
+  formData.append('language', normalizeLang(language))
 
   const response = await apiClient.post('/chat/voice', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },

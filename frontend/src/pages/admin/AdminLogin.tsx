@@ -7,7 +7,7 @@ import toast from 'react-hot-toast'
 
 export default function AdminLogin() {
   const navigate = useNavigate()
-  const { login: setAuth } = useAuthStore()
+  const { setOfficer } = useAuthStore()
   const [email, setEmail] = useState('admin@graamseva.gov.in')
   const [password, setPassword] = useState('Admin@123')
   const [isLoading, setIsLoading] = useState(false)
@@ -18,12 +18,14 @@ export default function AdminLogin() {
 
     try {
       const data = await apiLogin(email, password)
-      setAuth(
+      setOfficer(
         {
-          id: data.officer_id,
+          id: String(data.officer_id),
           name: data.officer_name,
           email: email,
-          role: data.role,
+          department: 'General Administration',
+          district: 'Khordha',
+          role: (data.role === 'admin' ? 'admin' : 'officer'),
         },
         data.access_token
       )
@@ -33,11 +35,13 @@ export default function AdminLogin() {
       console.error('Login failed:', err)
       // Fallback for offline demo mode
       if (email === 'admin@graamseva.gov.in' && password === 'Admin@123') {
-        setAuth(
+        setOfficer(
           {
-            id: 1,
+            id: '1',
             name: 'Panchayat Nodal Officer',
             email: email,
+            department: 'General Administration',
+            district: 'Khordha',
             role: 'admin',
           },
           'demo-jwt-token'
