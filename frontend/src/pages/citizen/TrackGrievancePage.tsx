@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { Search, AlertCircle, FileText, MapPin, Clock, CheckCircle } from 'lucide-react'
+import { Search, Clock, AlertCircle } from 'lucide-react'
 import Header from '../../components/layout/Header'
 import GrievanceStatusTimeline from '../../components/grievance/GrievanceStatusTimeline'
 import { trackGrievance } from '../../api/grievances'
+import { DEMO_TICKETS, getLocalTicket } from '../../data/odishaData'
 import toast from 'react-hot-toast'
 
 export default function TrackGrievancePage() {
@@ -11,6 +12,7 @@ export default function TrackGrievancePage() {
   const [ticketIdInput, setTicketIdInput] = useState('')
   const [grievance, setGrievance] = useState<any | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [notFound, setNotFound] = useState(false)
 
   useEffect(() => {
     const qTicket = searchParams.get('ticket')
@@ -21,24 +23,40 @@ export default function TrackGrievancePage() {
   }, [searchParams])
 
   const handleTrack = async (ticketToSearch?: string) => {
-    const tId = ticketToSearch || ticketIdInput.trim()
+    const tId = (ticketToSearch || ticketIdInput).trim().toUpperCase()
     if (!tId) {
       toast.error('Please enter a ticket ID')
       return
     }
 
+    setTicketIdInput(tId)
     setIsLoading(true)
+    setNotFound(false)
+
     try {
       const data = await trackGrievance(tId)
       setGrievance(data)
-    } catch (err: any) {
-      console.error('Tracking error:', err)
-      toast.error('Ticket not found. Please verify the ID.')
-      setGrievance(null)
+    } catch {
+      const localMatch = getLocalTicket(tId)
+      if (localMatch) {
+        setGrievance(localMatch)
+      } else {
+        setGrievance(null)
+        setNotFound(true)
+        toast.error('Ticket not found. Try a sample Ticket ID below.')
+      }
     } finally {
       setIsLoading(false)
     }
   }
+
+  const getSlaDaysRemaining = (slaDeadline?: string) => {
+    if (!slaDeadline) return null
+    const diffMs = new Date(slaDeadline).getTime() - Date.now()
+    return Math.ceil(diffMs / 86400000)
+  }
+
+  const daysLeft = grievance ? getSlaDaysRemaining(grievance.sla_deadline) : null
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
@@ -53,12 +71,12 @@ export default function TrackGrievancePage() {
             ଅଭିଯୋଗର ସ୍ଥିତି ଯାଞ୍ଚ କରନ୍ତୁ
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 mt-1">
-            Track your complaint status, assigned officer, and resolution SLA deadline.
+            Track your complaint status, assigned department, and SLA resolution deadline.
           </p>
         </div>
 
         {/* Search Bar */}
-        <div className="bg-white p-3 rounded-2xl border border-slate-200/90 shadow-sm mb-8">
+        <div className="bg-white p-3 rounded-2xl border border-slate-200/90 shadow-sm mb-4">
           <form
             onSubmit={(e) => {
               e.preventDefault()
@@ -84,6 +102,31 @@ export default function TrackGrievancePage() {
           </form>
         </div>
 
+        {/* Sample Ticket Quick Chips */}
+        <div className="mb-8 flex flex-wrap items-center justify-center gap-2 text-xs">
+          <span className="text-slate-500 font-semibold">Sample Tickets (Tap to Track):</span>
+          {Object.keys(DEMO_TICKETS).map((sampleId) => (
+            <button
+              key={sampleId}
+              type="button"
+              onClick={() => handleTrack(sampleId)}
+              className="px-3 py-1 rounded-full bg-white border border-slate-200 hover:border-purple-400 hover:bg-purple-50 font-mono text-[11px] font-bold text-slate-700 transition-colors"
+            >
+              {sampleId}
+            </button>
+          ))}
+        </div>
+
+        {notFound && (
+          <div className="bg-white rounded-3xl p-8 border border-rose-200 text-center space-y-2">
+            <AlertCircle className="w-10 h-10 text-rose-500 mx-auto" />
+            <h3 className="font-bold text-slate-900">Ticket Not Found</h3>
+            <p className="text-xs text-slate-500">
+              Double-check your Ticket ID or tap one of the sample tickets above to preview tracking.
+            </p>
+          </div>
+        )}
+
         {/* Grievance Details Card */}
         {grievance && (
           <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/90 shadow-sm space-y-6">
@@ -95,22 +138,40 @@ export default function TrackGrievancePage() {
                   {grievance.ticket_id}
                 </h2>
               </div>
-              <div className="flex items-center space-x-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <span className="px-3 py-1 rounded-full text-xs font-bold bg-purple-50 text-purple-700 border border-purple-200 uppercase">
                   {grievance.category}
                 </span>
                 <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 uppercase">
                   {grievance.status}
                 </span>
+                {daysLeft !== null && grievance.status !== 'resolved' && (
+                  <span
+                    className={`px-3 py-1 rounded-full text-xs font-bold flex items-center space-x-1 border ${
+                      daysLeft <= 1
+                        ? 'bg-rose-50 text-rose-700 border-rose-200'
+                        : 'bg-amber-50 text-amber-700 border-amber-200'
+                    }`}
+                  >
+                    <Clock className="w-3 h-3" />
+                    <span>{daysLeft > 0 ? `${daysLeft} days left in SLA` : 'SLA Due'}</span>
+                  </span>
+                )}
               </div>
             </div>
 
             {/* Department & Info */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs bg-slate-50 p-4 rounded-2xl border border-slate-100">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs bg-slate-50 p-4 rounded-2xl border border-slate-100">
               <div>
                 <span className="text-slate-400 font-medium">Assigned Department:</span>
                 <p className="font-semibold text-slate-800 text-sm mt-0.5">
                   {grievance.dept_assigned || 'Works / Rural Department'}
+                </p>
+              </div>
+              <div>
+                <span className="text-slate-400 font-medium">District:</span>
+                <p className="font-semibold text-slate-800 text-sm mt-0.5">
+                  {grievance.district || 'Khordha'}
                 </p>
               </div>
               <div>
@@ -163,4 +224,3 @@ export default function TrackGrievancePage() {
     </div>
   )
 }
-

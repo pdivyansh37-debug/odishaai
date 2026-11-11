@@ -14,7 +14,7 @@
 
   body {
     font-family: 'Noto Sans Odia', 'Inter', system-ui, sans-serif;
-    @apply bg-gray-50 text-gray-900 antialiased;
+    @apply bg-gray-50 text-gray-900 antialiased pb-16 md:pb-0;
     min-height: 100vh;
     overflow-x: hidden;
   }
